@@ -1,0 +1,167 @@
+import java.util.HashMap;
+import java.util.Map;
+
+public class DungeonGenerator {
+    public record Coord(int x, int y) {
+    }
+
+    private static double roomProbability = 0.6;
+
+    public static Map<Coord, Room> generate(int size) {
+        Map<Coord, Room> grid = new HashMap<Coord, Room>();
+
+        grid.put(new Coord(0, 0), new Room(true, true, true, true));
+
+        for (int r = 1; r <= size; r++) {
+            for (int x = -r; x <= r; x++) {
+                for (int y = -r; y <= r; y++) {
+                    if (Math.abs(x) == r || Math.abs(y) == r) {
+                        Coord square = new Coord(x, y);
+                        Room room = makeRoom(grid, square, size);
+                        if (room != null) {
+                            grid.put(square, room);
+                        }
+                    }
+                }
+            }
+        }
+        postProcess(grid, size);
+
+        return grid;
+    }
+
+    private static Room makeRoom(Map<Coord, Room> grid, Coord square, int size) {
+        boolean n = false;
+        boolean s = false;
+        boolean e = false;
+        boolean w = false;
+
+        Coord u = new Coord(square.x, square.y + 1);
+        Coord d = new Coord(square.x, square.y - 1);
+        Coord l = new Coord(square.x - 1, square.y);
+        Coord r = new Coord(square.x + 1, square.y);
+
+        if (grid.containsKey(u)) {
+            if (grid.get(u).isSouth()) {
+                n = true;
+            }
+        } else {
+            if (Math.random() >= roomProbability) {
+                n = true;
+            }
+        }
+
+        if (grid.containsKey(d)) {
+            if (grid.get(d).isNorth()) {
+                s = true;
+            }
+        } else {
+            if (Math.random() >= roomProbability) {
+                s = true;
+            }
+        }
+
+        if (grid.containsKey(l)) {
+            if (grid.get(l).isEast()) {
+                w = true;
+            }
+        } else {
+            if (Math.random() >= roomProbability) {
+                w = true;
+            }
+        }
+
+        if (grid.containsKey(r)) {
+            if (grid.get(r).isWest()) {
+                e = true;
+            }
+        } else {
+            if (Math.random() >= roomProbability) {
+                e = true;
+            }
+        }
+
+        if (Math.abs(square.x) >= size) {
+            if (square.x < 0) {
+                w = false;
+            } else {
+                e = false;
+            }
+        }
+
+        if (Math.abs(square.y) >= size) {
+            if (square.y < 0) {
+                s = false;
+            } else {
+                n = false;
+            }
+        }
+
+        if ((Math.abs(square.y) >= size || Math.abs(square.x) >= size) && (n || s || e || w)) {
+            return new Room(n, s, e, w);
+        } else if ((n && s) || (e && w) || (n && e) || (n && w) || (s && e) || (s && w)) {
+            return new Room(n, s, e, w);
+        } else {
+            return null;
+        }
+    }
+
+    public static void postProcess(Map<Coord, Room> grid, int size) {
+        Map<Coord, Room> deadEnds = new HashMap<>();
+
+        for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
+            Coord pos = entry.getKey();
+            Room existingRoom = entry.getValue();
+            Coord[] neighbors = {
+                new Coord(pos.x, pos.y + 1), // North
+                new Coord(pos.x, pos.y - 1), // South
+                new Coord(pos.x + 1, pos.y), // East
+                new Coord(pos.x - 1, pos.y)  // West
+            };
+
+            for (int i = 0; i < 4; i++) {
+                Coord target = neighbors[i];
+                if (Math.abs(target.x) <= size && Math.abs(target.y) <= size && !grid.containsKey(target)) {
+                    Room newDeadEnd = new Room(false, false, false, false);
+                    if (i == 0) { newDeadEnd.setSouth(true); existingRoom.setNorth(true); }
+                    if (i == 1) { newDeadEnd.setNorth(true); existingRoom.setSouth(true); }
+                    if (i == 2) { newDeadEnd.setWest(true);  existingRoom.setEast(true);  }
+                    if (i == 3) { newDeadEnd.setEast(true);  existingRoom.setWest(true);  }
+                    
+                    deadEnds.put(target, newDeadEnd);
+                }
+            }
+        }
+        grid.putAll(deadEnds);
+
+        for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
+            Coord pos = entry.getKey();
+            Room r = entry.getValue();
+            
+            if (r.isNorth() && !grid.containsKey(new Coord(pos.x, pos.y + 1))) r.setNorth(false);
+            if (r.isSouth() && !grid.containsKey(new Coord(pos.x, pos.y - 1))) r.setSouth(false);
+            if (r.isEast()  && !grid.containsKey(new Coord(pos.x + 1, pos.y))) r.setEast(false);
+            if (r.isWest()  && !grid.containsKey(new Coord(pos.x - 1, pos.y))) r.setWest(false);
+        }
+
+        for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
+            Coord pos = entry.getKey();
+            Room r = entry.getValue();
+            sync(grid, r, pos, pos.x, pos.y + 1, "N");
+            sync(grid, r, pos, pos.x, pos.y - 1, "S");
+            sync(grid, r, pos, pos.x + 1, pos.y, "E");
+            sync(grid, r, pos, pos.x - 1, pos.y, "W");
+        }
+    }
+
+    private static void sync(Map<Coord, Room> grid, Room r, Coord pos, int nx, int ny, String dir) {
+        Room neighbor = grid.get(new Coord(nx, ny));
+        if (neighbor != null) {
+            // If I have a door, you must have one. If you have a door, I must have one.
+            if (dir.equals("N") && (r.isNorth() || neighbor.isSouth())) { r.setNorth(true); neighbor.setSouth(true); }
+            if (dir.equals("S") && (r.isSouth() || neighbor.isNorth())) { r.setSouth(true); neighbor.setNorth(true); }
+            if (dir.equals("E") && (r.isEast()  || neighbor.isWest()))  { r.setEast(true);  neighbor.setWest(true);  }
+            if (dir.equals("W") && (r.isWest()  || neighbor.isEast()))  { r.setWest(true);  neighbor.setEast(true);  }
+        }
+    }
+}
