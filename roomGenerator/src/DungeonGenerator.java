@@ -9,7 +9,7 @@ public class DungeonGenerator {
     }
 
     private static Random rng;
-    private static double roomProbability = 0.6;
+    private static double roomProbability = 0.65;
 
     public static Map<Coord, Room> generate(int size, int seed) {
         rng = new Random(seed);
