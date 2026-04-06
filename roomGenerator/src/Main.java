@@ -8,8 +8,7 @@ public class Main {
         int dungeonSize = 20; // Increased size to test the file export
         String fileName = "dungeon_output.txt";
 
-        int seed = (int) (Math.random() * 100 * Math.random()
-                * (int) (System.currentTimeMillis() / 1000));
+        int seed =  -19416371; //Long.hashCode(Long.hashCode(System.currentTimeMillis()) + new Random().nextLong());
 
         System.out.println("GENERATING SEEDED DUNGEON...");
         System.out.println("SEED: " + seed);
@@ -19,7 +18,7 @@ public class Main {
 
         // try-with-resources ensures the file is saved and closed even if an error occurs
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
-            
+
             writer.println("WELCOME TO THE SEEDED DUNGEON");
             writer.println("SEED: " + seed);
             writer.println(); // Extra space
@@ -43,12 +42,12 @@ public class Main {
                         rowHasData = true;
                         // Line 1: North Connection
                         line1.append(r.isNorth() ? "  |  " : "  #  ");
-                        
+
                         // Line 2: West, Room, East Connections
                         String west = r.isWest() ? "-" : "#";
                         String east = r.isEast() ? "-" : "#";
                         line2.append(west).append(" R ").append(east);
-                        
+
                         // Line 3: South Connection
                         line3.append(r.isSouth() ? "  |  " : "  #  ");
                     }
@@ -60,7 +59,7 @@ public class Main {
                     writer.println(line3);
                 }
             }
-            
+
             System.out.println("SUCCESS! Check " + fileName + " for your map.");
 
         } catch (IOException e) {

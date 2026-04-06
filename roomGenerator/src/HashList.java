@@ -1,11 +1,11 @@
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Random;
 
 public class HashList<T> {
     private final ArrayList<T> list = new ArrayList<>();
-    private final HashSet<T> set = new HashSet<>();
+    private final LinkedHashSet<T> set = new LinkedHashSet<>();
 
     public boolean add(T item) {
         if (set.add(item)) {

@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -13,7 +13,7 @@ public class DungeonGenerator {
 
     public static Map<Coord, Room> generate(int size, int seed) {
         rng = new Random(seed);
-        Map<Coord, Room> grid = new HashMap<>();
+        Map<Coord, Room> grid = new LinkedHashMap<>();
         HashList<Coord> generated = new HashList<>();
 
         grid.put(new Coord(0, 0), new Room(true, true, true, true));
@@ -34,7 +34,7 @@ public class DungeonGenerator {
     }
 
     private static Map<Coord, Room> makeAdjacent(Map<Coord, Room> grid, Coord square, int size) {
-        Map<Coord, Room> adjacentMap = new HashMap<>();
+        Map<Coord, Room> adjacentMap = new LinkedHashMap<>();
 
         ArrayList<Coord> adjacent = new ArrayList<Coord>();
         adjacent.add(new Coord(square.x, square.y + 1));
@@ -119,7 +119,7 @@ public class DungeonGenerator {
     }
 
     public static void postProcess(Map<Coord, Room> grid, int size) {
-        Map<Coord, Room> deadEnds = new HashMap<>();
+        Map<Coord, Room> deadEnds = new LinkedHashMap<>();
 
         for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
             Coord pos = entry.getKey();
