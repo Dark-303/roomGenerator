@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 
@@ -14,31 +15,54 @@ public class DungeonGenerator {
     public static Map<Coord, Room> generate(int size, int seed) {
         rng = new Random(seed);
         Map<Coord, Room> grid = new HashMap<>();
-        ArrayList<Coord> allCoords = new ArrayList<Coord>();
-        for (int x = -size; x <= size; x++) {
-            for (int y = -size; y <= size; y++) {
-                if (!(x == 0 && y == 0))
-                    allCoords.add(new Coord(x, y));
-            }
-        }
-
-        Collections.shuffle(allCoords);
+        HashSet<Coord> generatedSet = new HashSet<>();
+        ArrayList<Coord> generated = new ArrayList<>();
 
         grid.put(new Coord(0, 0), new Room(true, true, true, true));
+        generated.add(new Coord(0, 0));
+        generatedSet.add(new Coord(0, 0));
 
-        for (Coord square : allCoords) {
-            Room room = makeRoom(grid, square, size);
-            if (room != null) {
-                grid.put(square, room);
+        while (!generated.isEmpty()) {
+            int selected = rng.nextInt(generated.size());
+            Map<Coord, Room> newSquares = makeAdjacent(grid, generated.get(selected), size);
+            for (Map.Entry<Coord, Room> e : newSquares.entrySet()) {
+                if (!generatedSet.contains(e.getKey()))
+                    generated.add(e.getKey());
+                generatedSet.add(e.getKey());
             }
+            generated.remove(selected);
         }
 
         postProcess(grid, size);
-        
+
         return grid;
     }
 
+    private static Map<Coord, Room> makeAdjacent(Map<Coord, Room> grid, Coord square, int size) {
+        Map<Coord, Room> adjacentMap = new HashMap<>();
+
+        ArrayList<Coord> adjacent = new ArrayList<Coord>();
+        adjacent.add(new Coord(square.x, square.y + 1));
+        adjacent.add(new Coord(square.x, square.y - 1));
+        adjacent.add(new Coord(square.x - 1, square.y));
+        adjacent.add(new Coord(square.x + 1, square.y));
+
+        Collections.shuffle(adjacent, rng);
+
+        for (Coord a : adjacent) {
+            Room room = makeRoom(grid, a, size);
+            if (room != null) {
+                grid.put(a, room);
+                adjacentMap.put(a, room);
+            }
+        }
+
+        return adjacentMap;
+    }
+
     private static Room makeRoom(Map<Coord, Room> grid, Coord square, int size) {
+        if (grid.containsKey(square))
+            return null;
         if (Math.abs(square.x) > size || Math.abs(square.y) > size)
             return null;
 
