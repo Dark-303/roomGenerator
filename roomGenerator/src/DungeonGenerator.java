@@ -26,9 +26,9 @@ public class DungeonGenerator {
             int selected = rng.nextInt(generated.size());
             Map<Coord, Room> newSquares = makeAdjacent(grid, generated.get(selected), size);
             for (Map.Entry<Coord, Room> e : newSquares.entrySet()) {
-                if (!generatedSet.contains(e.getKey()))
+                if (generatedSet.add(e.getKey())) {
                     generated.add(e.getKey());
-                generatedSet.add(e.getKey());
+                }
             }
             generated.remove(selected);
         }
