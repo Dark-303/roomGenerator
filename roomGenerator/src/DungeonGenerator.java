@@ -1,36 +1,47 @@
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class DungeonGenerator {
     public record Coord(int x, int y) {
     }
 
+    private static Random rng;
     private static double roomProbability = 0.6;
 
-    public static Map<Coord, Room> generate(int size) {
-        Map<Coord, Room> grid = new HashMap<Coord, Room>();
+    public static Map<Coord, Room> generate(int size, int seed) {
+        rng = new Random(seed);
+        Map<Coord, Room> grid = new HashMap<>();
+        ArrayList<Coord> allCoords = new ArrayList<Coord>();
+        for (int x = -size; x <= size; x++) {
+            for (int y = -size; y <= size; y++) {
+                if (!(x == 0 && y == 0))
+                    allCoords.add(new Coord(x, y));
+            }
+        }
+
+        Collections.shuffle(allCoords);
 
         grid.put(new Coord(0, 0), new Room(true, true, true, true));
 
-        for (int r = 1; r <= size; r++) {
-            for (int x = -r; x <= r; x++) {
-                for (int y = -r; y <= r; y++) {
-                    if (Math.abs(x) == r || Math.abs(y) == r) {
-                        Coord square = new Coord(x, y);
-                        Room room = makeRoom(grid, square, size);
-                        if (room != null) {
-                            grid.put(square, room);
-                        }
-                    }
-                }
+        for (Coord square : allCoords) {
+            Room room = makeRoom(grid, square, size);
+            if (room != null) {
+                grid.put(square, room);
             }
         }
-        postProcess(grid, size);
 
+        postProcess(grid, size);
+        
         return grid;
     }
 
     private static Room makeRoom(Map<Coord, Room> grid, Coord square, int size) {
+        if (Math.abs(square.x) > size || Math.abs(square.y) > size)
+            return null;
+
         boolean n = false;
         boolean s = false;
         boolean e = false;
@@ -46,7 +57,7 @@ public class DungeonGenerator {
                 n = true;
             }
         } else {
-            if (Math.random() >= roomProbability) {
+            if (rng.nextDouble() >= roomProbability) {
                 n = true;
             }
         }
@@ -56,7 +67,7 @@ public class DungeonGenerator {
                 s = true;
             }
         } else {
-            if (Math.random() >= roomProbability) {
+            if (rng.nextDouble() >= roomProbability) {
                 s = true;
             }
         }
@@ -66,7 +77,7 @@ public class DungeonGenerator {
                 w = true;
             }
         } else {
-            if (Math.random() >= roomProbability) {
+            if (rng.nextDouble() >= roomProbability) {
                 w = true;
             }
         }
@@ -76,30 +87,12 @@ public class DungeonGenerator {
                 e = true;
             }
         } else {
-            if (Math.random() >= roomProbability) {
+            if (rng.nextDouble() >= roomProbability) {
                 e = true;
             }
         }
 
-        if (Math.abs(square.x) >= size) {
-            if (square.x < 0) {
-                w = false;
-            } else {
-                e = false;
-            }
-        }
-
-        if (Math.abs(square.y) >= size) {
-            if (square.y < 0) {
-                s = false;
-            } else {
-                n = false;
-            }
-        }
-
-        if ((Math.abs(square.y) >= size || Math.abs(square.x) >= size) && (n || s || e || w)) {
-            return new Room(n, s, e, w);
-        } else if ((n && s) || (e && w) || (n && e) || (n && w) || (s && e) || (s && w)) {
+        if ((n && s) || (e && w) || (n && e) || (n && w) || (s && e) || (s && w)) {
             return new Room(n, s, e, w);
         } else {
             return null;
@@ -112,22 +105,34 @@ public class DungeonGenerator {
         for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
             Coord pos = entry.getKey();
             Room existingRoom = entry.getValue();
-            Coord[] neighbors = {
-                new Coord(pos.x, pos.y + 1), // North
-                new Coord(pos.x, pos.y - 1), // South
-                new Coord(pos.x + 1, pos.y), // East
-                new Coord(pos.x - 1, pos.y)  // West
+            Coord[] neighbors = {new Coord(pos.x, pos.y + 1), // North
+                    new Coord(pos.x, pos.y - 1), // South
+                    new Coord(pos.x + 1, pos.y), // East
+                    new Coord(pos.x - 1, pos.y) // West
             };
 
             for (int i = 0; i < 4; i++) {
                 Coord target = neighbors[i];
-                if (Math.abs(target.x) <= size && Math.abs(target.y) <= size && !grid.containsKey(target)) {
+                if (Math.abs(target.x) <= size && Math.abs(target.y) <= size
+                        && !grid.containsKey(target)) {
                     Room newDeadEnd = new Room(false, false, false, false);
-                    if (i == 0) { newDeadEnd.setSouth(true); existingRoom.setNorth(true); }
-                    if (i == 1) { newDeadEnd.setNorth(true); existingRoom.setSouth(true); }
-                    if (i == 2) { newDeadEnd.setWest(true);  existingRoom.setEast(true);  }
-                    if (i == 3) { newDeadEnd.setEast(true);  existingRoom.setWest(true);  }
-                    
+                    if (i == 0) {
+                        newDeadEnd.setSouth(true);
+                        existingRoom.setNorth(true);
+                    }
+                    if (i == 1) {
+                        newDeadEnd.setNorth(true);
+                        existingRoom.setSouth(true);
+                    }
+                    if (i == 2) {
+                        newDeadEnd.setWest(true);
+                        existingRoom.setEast(true);
+                    }
+                    if (i == 3) {
+                        newDeadEnd.setEast(true);
+                        existingRoom.setWest(true);
+                    }
+
                     deadEnds.put(target, newDeadEnd);
                 }
             }
@@ -137,11 +142,15 @@ public class DungeonGenerator {
         for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
             Coord pos = entry.getKey();
             Room r = entry.getValue();
-            
-            if (r.isNorth() && !grid.containsKey(new Coord(pos.x, pos.y + 1))) r.setNorth(false);
-            if (r.isSouth() && !grid.containsKey(new Coord(pos.x, pos.y - 1))) r.setSouth(false);
-            if (r.isEast()  && !grid.containsKey(new Coord(pos.x + 1, pos.y))) r.setEast(false);
-            if (r.isWest()  && !grid.containsKey(new Coord(pos.x - 1, pos.y))) r.setWest(false);
+
+            if (r.isNorth() && !grid.containsKey(new Coord(pos.x, pos.y + 1)))
+                r.setNorth(false);
+            if (r.isSouth() && !grid.containsKey(new Coord(pos.x, pos.y - 1)))
+                r.setSouth(false);
+            if (r.isEast() && !grid.containsKey(new Coord(pos.x + 1, pos.y)))
+                r.setEast(false);
+            if (r.isWest() && !grid.containsKey(new Coord(pos.x - 1, pos.y)))
+                r.setWest(false);
         }
 
         for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
@@ -158,10 +167,22 @@ public class DungeonGenerator {
         Room neighbor = grid.get(new Coord(nx, ny));
         if (neighbor != null) {
             // If I have a door, you must have one. If you have a door, I must have one.
-            if (dir.equals("N") && (r.isNorth() || neighbor.isSouth())) { r.setNorth(true); neighbor.setSouth(true); }
-            if (dir.equals("S") && (r.isSouth() || neighbor.isNorth())) { r.setSouth(true); neighbor.setNorth(true); }
-            if (dir.equals("E") && (r.isEast()  || neighbor.isWest()))  { r.setEast(true);  neighbor.setWest(true);  }
-            if (dir.equals("W") && (r.isWest()  || neighbor.isEast()))  { r.setWest(true);  neighbor.setEast(true);  }
+            if (dir.equals("N") && (r.isNorth() || neighbor.isSouth())) {
+                r.setNorth(true);
+                neighbor.setSouth(true);
+            }
+            if (dir.equals("S") && (r.isSouth() || neighbor.isNorth())) {
+                r.setSouth(true);
+                neighbor.setNorth(true);
+            }
+            if (dir.equals("E") && (r.isEast() || neighbor.isWest())) {
+                r.setEast(true);
+                neighbor.setWest(true);
+            }
+            if (dir.equals("W") && (r.isWest() || neighbor.isEast())) {
+                r.setWest(true);
+                neighbor.setEast(true);
+            }
         }
     }
 }
