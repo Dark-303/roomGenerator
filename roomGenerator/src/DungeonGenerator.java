@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 
@@ -15,22 +14,18 @@ public class DungeonGenerator {
     public static Map<Coord, Room> generate(int size, int seed) {
         rng = new Random(seed);
         Map<Coord, Room> grid = new HashMap<>();
-        HashSet<Coord> generatedSet = new HashSet<>();
-        ArrayList<Coord> generated = new ArrayList<>();
+        HashList<Coord> generated = new HashList<>();
 
         grid.put(new Coord(0, 0), new Room(true, true, true, true));
         generated.add(new Coord(0, 0));
-        generatedSet.add(new Coord(0, 0));
 
         while (!generated.isEmpty()) {
             int selected = rng.nextInt(generated.size());
             Map<Coord, Room> newSquares = makeAdjacent(grid, generated.get(selected), size);
             for (Map.Entry<Coord, Room> e : newSquares.entrySet()) {
-                if (generatedSet.add(e.getKey())) {
-                    generated.add(e.getKey());
-                }
+                generated.add(e.getKey());
             }
-            generated.remove(selected);
+            generated.removeFast(selected);
         }
 
         postProcess(grid, size);
