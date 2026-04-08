@@ -8,7 +8,7 @@ public class Main {
         int dungeonSize = 20; // Increased size to test the file export
         String fileName = "dungeon_output.txt";
 
-        int seed =  -19416371; //Long.hashCode(Long.hashCode(System.currentTimeMillis()) + new Random().nextLong());
+        int seed = 5831;//Long.hashCode(Long.hashCode(System.currentTimeMillis()) + new Random().nextLong());
 
         System.out.println("GENERATING SEEDED DUNGEON...");
         System.out.println("SEED: " + seed);

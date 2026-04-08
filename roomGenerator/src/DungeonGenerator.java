@@ -124,10 +124,10 @@ public class DungeonGenerator {
         for (Map.Entry<Coord, Room> entry : grid.entrySet()) {
             Coord pos = entry.getKey();
             Room existingRoom = entry.getValue();
-            Coord[] neighbors = {new Coord(pos.x, pos.y + 1), // North
-                    new Coord(pos.x, pos.y - 1), // South
-                    new Coord(pos.x + 1, pos.y), // East
-                    new Coord(pos.x - 1, pos.y) // West
+            Coord[] neighbors = {new Coord(pos.x, pos.y + 1),
+                    new Coord(pos.x, pos.y - 1),
+                    new Coord(pos.x + 1, pos.y),
+                    new Coord(pos.x - 1, pos.y)
             };
 
             for (int i = 0; i < 4; i++) {
@@ -185,7 +185,6 @@ public class DungeonGenerator {
     private static void sync(Map<Coord, Room> grid, Room r, Coord pos, int nx, int ny, String dir) {
         Room neighbor = grid.get(new Coord(nx, ny));
         if (neighbor != null) {
-            // If I have a door, you must have one. If you have a door, I must have one.
             if (dir.equals("N") && (r.isNorth() || neighbor.isSouth())) {
                 r.setNorth(true);
                 neighbor.setSouth(true);
